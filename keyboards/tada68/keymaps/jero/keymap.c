@@ -7,15 +7,6 @@
 #define _BL 0
 #define _FL 1
 
-#define OS_COUNT 3
-#define OS_LENGTH 10
-static unsigned char os_layer = 0;
-static char os_names[OS_COUNT][OS_LENGTH] = {
-    "Linux",
-    "Windows",
-    "macOS",
-};
-
 // Macro defns
 enum {
     TB_PREV = SAFE_RANGE,
@@ -25,39 +16,6 @@ enum {
     OS_CYCL,
     OS_PRNT,
     OS_PRNTL,
-};
-
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (record->event.pressed) {
-        switch (keycode) {
-            case TB_PREV:
-                SEND_STRING(SS_DOWN(X_LCTRL) SS_TAP(X_PGUP) SS_UP(X_LCTRL));
-                break;
-            case TB_NEXT:
-                SEND_STRING(SS_DOWN(X_LCTRL) SS_TAP(X_PGDOWN) SS_UP(X_LCTRL));
-                break;
-            case SP_PREV:
-                SEND_STRING(SS_DOWN(X_LGUI) SS_LALT("h") SS_UP(X_LGUI));
-                break;
-            case SP_NEXT:
-                SEND_STRING(SS_DOWN(X_LGUI) SS_LALT("l") SS_UP(X_LGUI));
-                break;
-            case OS_CYCL:
-                os_layer++;
-                if (os_layer >= OS_COUNT) os_layer = 0;
-                return false;
-                break;
-            case OS_PRNT:
-                send_string((char[]) {'1' + os_layer, '\0'});
-                return false;
-                break;
-            case OS_PRNTL:
-                send_string(os_names[os_layer]);
-                return false;
-                break;
-        }
-    }
-    return true;
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -101,3 +59,122 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   _______,_______,_______,BL_DEC, BL_TOGG,BL_INC, KC_SPC,KC_MUTE,KC_VOLD,KC_VOLU,_______,_______, OS_CYCL, _______, \
   _______,_______,_______,                 _______,               _______,_______,_______,KC_MPRV,OS_PRNTL,KC_MNXT),
 };
+
+
+#define OS_COUNT 3
+#define OS_LENGTH 10
+#define OS_LINUX 0
+#define OS_WIN 1
+#define OS_MAC 2
+#define OS_SWITCH_FLASH_DELAY 100
+
+static unsigned char os_layer = 0;
+static char os_names[OS_COUNT][OS_LENGTH] = {
+    "Linux",
+    "Windows",
+    "macOS",
+};
+
+typedef union {
+    uint32_t raw;
+    struct {
+        unsigned char current_os :3;
+    };
+} user_config_t;
+
+user_config_t user_config;
+
+void keyboard_post_init_user(void) {
+    user_config.raw = eeconfig_read_user();
+    os_layer = user_config.current_os;
+}
+
+void eeconfig_init_user(void) {
+    // EEPROM has been reset, set defaults here
+}
+
+void flash_backlight(void) {
+    if (is_backlight_enabled()) {
+        backlight_toggle();
+    } else {
+        backlight_level(BACKLIGHT_LEVELS);
+    }
+    wait_ms(OS_SWITCH_FLASH_DELAY);
+    backlight_toggle();
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!record->event.pressed) return true;
+    switch (keycode) {
+        case SP_PREV:
+            switch (os_layer) {
+                case OS_LINUX:
+                    SEND_STRING(SS_LGUI(SS_LALT(SS_TAP(X_H))));
+                    break;
+                case OS_MAC:
+                    SEND_STRING(SS_LCTRL(SS_TAP(X_LEFT)));
+                    break;
+                case OS_WIN:
+                    SEND_STRING(SS_LGUI(SS_LCTRL(SS_TAP(X_LEFT))));
+                    break;
+            }
+            break;
+        case SP_NEXT:
+            switch (os_layer) {
+                case OS_LINUX:
+                    SEND_STRING(SS_LGUI(SS_LALT(SS_TAP(X_L))));
+                    break;
+                case OS_MAC:
+                    SEND_STRING(SS_LCTRL(SS_TAP(X_RIGHT)));
+                    break;
+                case OS_WIN:
+                    SEND_STRING(SS_LGUI(SS_LCTRL(SS_TAP(X_RIGHT))));
+                    break;
+            }
+            break;
+        case TB_PREV:
+            switch (os_layer) {
+                case OS_LINUX:
+                case OS_WIN:
+                    SEND_STRING(SS_LCTRL(SS_TAP(X_PGUP)));
+                    break;
+                case OS_MAC:
+                    SEND_STRING(SS_LGUI(SS_LSFT(SS_TAP(X_LBRACKET))));
+                    break;
+            }
+            break;
+        case TB_NEXT:
+            switch (os_layer) {
+                case OS_LINUX:
+                case OS_WIN:
+                    SEND_STRING(SS_LCTRL(SS_TAP(X_PGDOWN)));
+                    break;
+                case OS_MAC:
+                    SEND_STRING(SS_LGUI(SS_LSFT(SS_TAP(X_RBRACKET))));
+                    break;
+            }
+            break;
+        case OS_CYCL:
+            if (record->event.pressed) {
+                os_layer++;
+                if (os_layer >= OS_COUNT) os_layer = 0;
+                user_config.current_os = os_layer;
+                flash_backlight();
+            }
+            return false;
+            break;
+        case OS_PRNT:
+            if (record->event.pressed) {
+                send_string((char[]) {'1' + os_layer, '\0'});
+            }
+            return false;
+            break;
+        case OS_PRNTL:
+            if (record->event.pressed) {
+                send_string(os_names[os_layer]);
+            }
+            return false;
+            break;
+    }
+    return true;
+}
