@@ -9,7 +9,12 @@
 
 #define OS_COUNT 3
 #define OS_LENGTH 10
-static char os_layer = 0;
+static unsigned char os_layer = 0;
+static char os_names[OS_COUNT][OS_LENGTH] = {
+    "Linux",
+    "Windows",
+    "macOS",
+};
 
 // Macro defns
 enum {
@@ -19,10 +24,10 @@ enum {
     SP_NEXT,
     OS_CYCL,
     OS_PRNT,
+    OS_PRNTL,
 };
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    char os_str[2] = "1";
     if (record->event.pressed) {
         switch (keycode) {
             case TB_PREV:
@@ -43,8 +48,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 return false;
                 break;
             case OS_PRNT:
-                os_str[0] += os_layer;
-                send_string(os_str);
+                send_string((char[]) {'1' + os_layer, '\0'});
+                return false;
+                break;
+            case OS_PRNTL:
+                send_string(os_names[os_layer]);
                 return false;
                 break;
         }
@@ -91,5 +99,5 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   _______,_______,_______,_______,_______, _______,_______,SP_PREV,TB_PREV,TB_NEXT,SP_NEXT,_______,_______, _______,KC_INS, \
   _______,_______,_______,_______,_______,_______,KC_LEFT,KC_DOWN,KC_UP,KC_RGHT,_______,_______,        _______,KC_END, \
   _______,_______,_______,BL_DEC, BL_TOGG,BL_INC, KC_SPC,KC_MUTE,KC_VOLD,KC_VOLU,_______,_______, OS_CYCL, _______, \
-  _______,_______,_______,                 _______,               _______,_______,_______,KC_MPRV,_______, KC_MNXT),
+  _______,_______,_______,                 _______,               _______,_______,_______,KC_MPRV,OS_PRNTL,KC_MNXT),
 };
