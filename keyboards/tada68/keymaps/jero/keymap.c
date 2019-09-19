@@ -7,6 +7,51 @@
 #define _BL 0
 #define _FL 1
 
+#define OS_COUNT 3
+#define OS_LENGTH 10
+static char os_layer = 0;
+
+// Macro defns
+enum {
+    TB_PREV = SAFE_RANGE,
+    TB_NEXT,
+    SP_PREV,
+    SP_NEXT,
+    OS_CYCL,
+    OS_PRNT,
+};
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    char os_str[2] = "1";
+    if (record->event.pressed) {
+        switch (keycode) {
+            case TB_PREV:
+                SEND_STRING(SS_DOWN(X_LCTRL) SS_TAP(X_PGUP) SS_UP(X_LCTRL));
+                break;
+            case TB_NEXT:
+                SEND_STRING(SS_DOWN(X_LCTRL) SS_TAP(X_PGDOWN) SS_UP(X_LCTRL));
+                break;
+            case SP_PREV:
+                SEND_STRING(SS_DOWN(X_LGUI) SS_LALT("h") SS_UP(X_LGUI));
+                break;
+            case SP_NEXT:
+                SEND_STRING(SS_DOWN(X_LGUI) SS_LALT("l") SS_UP(X_LGUI));
+                break;
+            case OS_CYCL:
+                os_layer++;
+                if (os_layer >= OS_COUNT) os_layer = 0;
+                return false;
+                break;
+            case OS_PRNT:
+                os_str[0] += os_layer;
+                send_string(os_str);
+                return false;
+                break;
+        }
+    }
+    return true;
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   /* Keymap _BL: (Base Layer) Default Layer
    * ,----------------------------------------------------------------.
@@ -30,21 +75,21 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   /* Keymap _FL: Function Layer
    * ,----------------------------------------------------------------.
-   * |Esc| F1|F2 |F3 |F4 |F5 |F6 |F7 |F8 |F9 |F10|F11|F12|Del    |  1 |
+   * |Esc| F1|F2 |F3 |F4 |F5 |F6 |F7 |F8 |F9 |F10|F11|F12|Del    |Prnt|
    * |----------------------------------------------------------------|
    * |     |   |   |   |   |   |   |   |   |   |   |   |   |     |Ins |
    * |----------------------------------------------------------------|
-   * |      |   |   |   |   |   |   |   |   |   |   |   |        |End |
+   * |      |   |   |   |   |   | < | v | ^ | > |   |   |        |End |
    * |----------------------------------------------------------------|
-   * |        |   |   |Bl-|BL |BL+|Spc|MUT|VU-|VU+|   |      |   |    |
+   * |        |   |   |Bl-|BL |BL+|Spc|MUT|VO-|VO+|   |     |Cycl|    |
    * |----------------------------------------------------------------|
    * |    |    |    |                       |   |   |   |Prev|   |Next|
    * `----------------------------------------------------------------'
    */
 [_FL] = LAYOUT_ansi(
-  KC_ESC , KC_F1 ,KC_F2, KC_F3, KC_F4, KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_F11, KC_F12, KC_DEL, KC_P1 ,  \
-  _______,_______,_______,_______,_______, _______,_______,_______,_______,_______,_______,_______,_______, _______,KC_INS, \
-  _______,_______,_______,_______,_______,_______,_______,_______,_______,_______,_______,_______,        _______,KC_END, \
-  _______,_______,_______,BL_DEC, BL_TOGG,BL_INC, KC_SPC,KC_MUTE,KC_VOLD,KC_VOLU,_______,_______, _______, _______, \
+  KC_ESC , KC_F1 ,KC_F2, KC_F3, KC_F4, KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_F11, KC_F12, KC_DEL, OS_PRNT ,  \
+  _______,_______,_______,_______,_______, _______,_______,SP_PREV,TB_PREV,TB_NEXT,SP_NEXT,_______,_______, _______,KC_INS, \
+  _______,_______,_______,_______,_______,_______,KC_LEFT,KC_DOWN,KC_UP,KC_RGHT,_______,_______,        _______,KC_END, \
+  _______,_______,_______,BL_DEC, BL_TOGG,BL_INC, KC_SPC,KC_MUTE,KC_VOLD,KC_VOLU,_______,_______, OS_CYCL, _______, \
   _______,_______,_______,                 _______,               _______,_______,_______,KC_MPRV,_______, KC_MNXT),
 };
