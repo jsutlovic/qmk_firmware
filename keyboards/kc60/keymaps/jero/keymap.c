@@ -45,15 +45,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #define OS_COUNT 3
 #define OS_LENGTH 10
-#define OS_LINUX 0
-#define OS_WIN 1
+#define OS_WIN 0
+#define OS_LINUX 1
 #define OS_MAC 2
 #define OS_SWITCH_FLASH_DELAY 100
 
 static unsigned char os_layer = 0;
 static char os_names[OS_COUNT][OS_LENGTH] = {
-    "Linux",
     "Windows",
+    "Linux",
     "macOS",
 };
 
