@@ -19,6 +19,7 @@ enum {
     OS_CYCL,
     OS_PRNT,
     OS_PRNTL,
+    J_DBG,
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -48,19 +49,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    * |----------------------------------------------------------------|
    * |     |   |   |   |   |PgU|   |Sp<|Tb<|Tb>|Sp>|   |   |     |Ins |
    * |----------------------------------------------------------------|
-   * |      |   |   |   |   |PgD| < | v | ^ | > |   | ` |        |End |
+   * |      |SA+|SA-|   |   |PgD| < | v | ^ | > |   | ` |        |End |
    * |----------------------------------------------------------------|
-   * |        |   |   |Bl-|BL |BL+|Spc|MUT|VO-|VO+|   |     |Cycl|    |
+   * |        |HUE|MOD|BR-|RGB|BR+|Spc|MUT|VO-|VO+|   |     |Cycl|    |
    * |----------------------------------------------------------------|
-   * |     |    |    |                      |   |   |   |Prev|Prt|Next|
+   * |RESET|REEP|    |                      |DBG|   |   |Prev|Prt|Next|
    * `----------------------------------------------------------------'
    */
 [_FL] = LAYOUT_65_ansi(
   KC_ESC , KC_F1 , KC_F2 , KC_F3 , KC_F4 , KC_F5 , KC_F6 , KC_F7, KC_F8 , KC_F9 , KC_F10 ,KC_F11,KC_F12,   KC_DEL ,OS_PRNT,  \
   _______,_______,_______,_______,_______,KC_PGUP,_______,SP_PREV,TB_PREV,TB_NEXT,SP_NEXT,_______,_______, _______, KC_INS, \
-  _______   ,_______,_______,_______,_______,KC_PGDN,KC_LEFT,KC_DOWN,KC_UP,KC_RGHT,_______,_______,        _______, KC_END, \
-  EEP_RST     ,RGB_HUI,RGB_MOD,RGB_VAD,RGB_TOG,RGB_VAI, KC_SPC,KC_MUTE,KC_VOLD,KC_VOLU,_______,     _______, OS_CYCL, _______, \
-  RESET  ,_______,_______,                _______                       , _______,_______,_______,KC_MPRV,OS_PRNTL, KC_MNXT),
+  _______   ,RGB_SAI,RGB_SAD,_______,_______,KC_PGDN,KC_LEFT,KC_DOWN,KC_UP,KC_RGHT,_______,_______,        _______, KC_END, \
+  _______     ,RGB_HUI,RGB_MOD,RGB_VAD,RGB_TOG,RGB_VAI, KC_SPC,KC_MUTE,KC_VOLD,KC_VOLU,_______,     _______, OS_CYCL, _______, \
+  RESET  ,EEP_RST,_______,                _______                       ,     J_DBG,_______,_______,KC_MPRV,OS_PRNTL, KC_MNXT),
 
   /* Keymap _GAME: (Base Layer) Game Layer - no SpaceFn
    * ,----------------------------------------------------------------.
@@ -90,7 +91,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 #define OS_LINUX 0
 #define OS_WIN 1
 #define OS_MAC 2
-#define OS_SWITCH_FLASH_DELAY 100
+#define OS_SWITCH_FLASH_DELAY 200
 
 static unsigned char os_layer = 0;
 static char os_names[OS_COUNT][OS_LENGTH] = {
@@ -98,6 +99,7 @@ static char os_names[OS_COUNT][OS_LENGTH] = {
     "Windows",
     "macOS",
 };
+char rgb_debug_str[24];
 
 typedef union {
     uint32_t raw;
@@ -114,6 +116,33 @@ void rgb_matrix_indicators_user(void)
     {
         rgb_matrix_set_color(8, 0xFF, 0xFF, 0xFF);
     }
+
+    if (!g_suspend_state && rgb_matrix_config.enable) {
+        switch (biton32(layer_state)) {
+            case _BL:
+            case _FL:
+                switch (os_layer) {
+                    case OS_LINUX:
+                        rgb_matrix_set_color(35, 3,6,7);
+                        break;
+                    case OS_WIN:
+                        rgb_matrix_set_color(35, 0,5,7);
+                        break;
+                    case OS_MAC:
+                        rgb_matrix_set_color(35, 7,3,7);
+                        break;
+                    default:
+                        // Error
+                        rgb_matrix_set_color(35, 10,0,0);
+                        break;
+                }
+                break;
+            case _GAME:
+                rgb_matrix_set_color(42, 10,0,0);
+                rgb_matrix_set_color(65, 10,0,0);
+                break;
+        }
+    }
 }
 
 void keyboard_post_init_user(void) {
@@ -123,20 +152,22 @@ void keyboard_post_init_user(void) {
 
 void eeconfig_init_user(void) {
     // EEPROM has been reset, set defaults here
-    rgb_matrix_enable();
-    rgb_matrix_sethsv(0, 0, 50);
-    rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+    rgb_matrix_enable_noeeprom();
+    rgb_matrix_sethsv_noeeprom(136, 96, 52);
+    rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+    user_config.current_os = 0;
 }
 
 void flash_backlight(void) {
-    HSV current = rgb_matrix_config.hsv;
-    if (current.v > 0) {
-        rgb_matrix_sethsv(0, 0, 0);
+    uint8_t mode = rgb_matrix_config.mode;
+    if (mode == RGB_MATRIX_NONE) {
+        rgb_matrix_sethsv_noeeprom(0,0,255);
+        rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
     } else {
-        rgb_matrix_sethsv(0, 0, 255);
+        rgb_matrix_mode_noeeprom(RGB_MATRIX_NONE);
     }
     wait_ms(OS_SWITCH_FLASH_DELAY);
-    rgb_matrix_sethsv(current.h, current.s, current.v);
+    rgb_matrix_mode_noeeprom(mode);
 }
 
 // Combos
@@ -223,6 +254,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 os_layer++;
                 if (os_layer >= OS_COUNT) os_layer = 0;
                 user_config.current_os = os_layer;
+                eeconfig_update_user(user_config.raw);
                 flash_backlight();
             }
             return false;
@@ -235,7 +267,26 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             break;
         case OS_PRNTL:
             if (record->event.pressed) {
-                send_string(os_names[os_layer]);
+                if (os_layer >= OS_COUNT) {
+                    send_string("Error!");
+                } else {
+                    send_string(os_names[os_layer]);
+                }
+            }
+            return false;
+            break;
+        case J_DBG:
+            if (record->event.pressed) {
+                RGB rgb = hsv_to_rgb(rgb_matrix_config.hsv);
+                uprintf("{H:%d S:%d V:%d} ",
+                        rgb_matrix_config.hsv.h,
+                        rgb_matrix_config.hsv.s,
+                        rgb_matrix_config.hsv.v);
+                uprintf("{R:%d G:%d B:%d} ",
+                        rgb.r, rgb.g, rgb.b);
+                uprintf("M: %d ", rgb_matrix_config.mode);
+                uprintf("OS: %d ", os_layer);
+                uprintln();
             }
             return false;
             break;
