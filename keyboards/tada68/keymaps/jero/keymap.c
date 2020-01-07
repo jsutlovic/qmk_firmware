@@ -60,7 +60,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   _______,_______,_______,_______,_______,KC_PGUP,_______,SP_PREV,TB_PREV,TB_NEXT,SP_NEXT,_______,_______, _______, KC_INS, \
   _______   ,_______,_______,_______,_______,KC_PGDN,KC_LEFT,KC_DOWN,KC_UP,KC_RGHT,_______,_______,        _______, KC_END, \
   _______     ,_______,_______,BL_DEC,BL_TOGG,BL_INC, KC_SPC,KC_MUTE,KC_VOLD,KC_VOLU,_______,     _______, OS_CYCL, _______, \
-  _______,_______,_______,                _______                       , _______,_______,_______,KC_MPRV,OS_PRNTL, KC_MNXT),
+  RESET  ,_______,_______,                _______                       , _______,_______,_______,KC_MPRV,OS_PRNTL, KC_MNXT),
 
   /* Keymap _GAME: (Base Layer) Game Layer - no SpaceFn
    * ,----------------------------------------------------------------.
