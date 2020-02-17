@@ -16,6 +16,8 @@ enum {
     TB_NEXT,
     SP_PREV,
     SP_NEXT,
+    WN_PREV,
+    WN_NEXT,
     OS_CYCL,
     OS_PRNT,
     OS_PRNTL,
@@ -47,7 +49,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    * ,----------------------------------------------------------------.
    * |Esc|F1 |F2 |F3 |F4 |F5 |F6 |F7 |F8 |F9 |F10|F11|F12|Del    |Prnt|
    * |----------------------------------------------------------------|
-   * |     |   |   |   |   |PgU|   |Sp<|Tb<|Tb>|Sp>|   |   |     |Ins |
+   * |     |   |   |   |   |PgU|   |Sp<|Tb<|Tb>|Sp>|Wn<|Wn>|     |Ins |
    * |----------------------------------------------------------------|
    * |      |SA+|SA-|   |   |PgD| < | v | ^ | > |   | ` |        |End |
    * |----------------------------------------------------------------|
@@ -58,7 +60,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    */
 [_FL] = LAYOUT_65_ansi(
   KC_ESC , KC_F1 , KC_F2 , KC_F3 , KC_F4 , KC_F5 , KC_F6 , KC_F7, KC_F8 , KC_F9 , KC_F10 ,KC_F11,KC_F12,   KC_DEL ,OS_PRNT,  \
-  _______,_______,_______,_______,_______,KC_PGUP,_______,SP_PREV,TB_PREV,TB_NEXT,SP_NEXT,_______,_______, _______, KC_INS, \
+  _______,_______,_______,_______,_______,KC_PGUP,_______,SP_PREV,TB_PREV,TB_NEXT,SP_NEXT,WN_PREV,WN_NEXT, _______, KC_INS, \
   _______   ,RGB_SAI,RGB_SAD,_______,_______,KC_PGDN,KC_LEFT,KC_DOWN,KC_UP,KC_RGHT,_______, KC_GRV,        _______, KC_END, \
   _______     ,RGB_HUI,RGB_MOD,RGB_VAD,RGB_TOG,RGB_VAI, KC_SPC,KC_MUTE,KC_VOLD,KC_VOLU,_______,     _______, OS_CYCL, _______, \
   RESET  ,EEP_RST,_______,                _______                       ,     J_DBG,_______,_______,KC_MPRV,OS_PRNTL, KC_MNXT),
@@ -247,6 +249,20 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     break;
                 case OS_MAC:
                     SEND_STRING(SS_LGUI(SS_LSFT(SS_TAP(X_RBRACKET))));
+                    break;
+            }
+            break;
+        case WN_PREV:
+            switch (os_layer) {
+                case OS_LINUX:
+                    SEND_STRING(SS_LGUI(SS_TAP(X_H)));
+                    break;
+            }
+            break;
+        case WN_NEXT:
+            switch (os_layer) {
+                case OS_LINUX:
+                    SEND_STRING(SS_LGUI(SS_TAP(X_L)));
                     break;
             }
             break;
