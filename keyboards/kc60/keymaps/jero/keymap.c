@@ -28,7 +28,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
           ),
   [_FL] = LAYOUT(
           KC_ESC,   KC_F1,    KC_F2,    KC_F3,   KC_F4,    KC_F5,    KC_F6,    KC_F7,   KC_F8,   KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_DEL,  \
-          OS_CYCL,  _______,  _______,  _______, _______,  KC_PGUP,  _______,  SP_PREV, TB_PREV, TB_NEXT,  SP_NEXT,  _______,  _______,  KC_INS,  \
+          OS_CYCL,  _______,  _______,  _______, _______,  _______,  KC_PGUP,  SP_PREV, TB_PREV, TB_NEXT,  SP_NEXT,  _______,  _______,  KC_INS,  \
           _______,  _______,  _______,  _______, _______,  KC_PGDN,  KC_LEFT,  KC_DOWN, KC_UP,   KC_RIGHT, _______,  _______,  _______,  _______, \
           _______,  _______,  KC_MPRV,  KC_MPLY, KC_MNXT,  _______,  _______,  KC_SPC,  KC_MUTE, KC_VOLD,  KC_VOLU,  _______,  _______,  _______, \
           RESET  ,  _______,  _______,                     _______,                              _______,  _______,  _______,  OS_PRNTL, _______ \
@@ -69,6 +69,7 @@ user_config_t user_config;
 void keyboard_post_init_user(void) {
     user_config.raw = eeconfig_read_user();
     os_layer = user_config.current_os;
+    backlight_level(BACKLIGHT_LEVELS);
 }
 
 void eeconfig_init_user(void) {
